@@ -1,454 +1,434 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Three-Column Web App</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-        }
-        .app {
-            display: flex;
-            height: 100vh;
-            background-color: #333;
-            color: #eee;
-            font-family: 'Courier New', Courier, monospace;
-        }
-        .column {
-            overflow: auto;
-            padding: 10px;
-            box-sizing: border-box;
-        }
-        .resize-handle {
-            width: 5px;
-            height: 100%;
-            background-color: #555;
-            cursor: col-resize;
-        }
-        #column1 {
-            width: 40%;
-        }
-        #column2 {
-            width: 30%;
-            display: flex;
-            flex-direction: column;
-        }
-        #column3 {
-            width: 30%;
-        }
-        .tab-bar {
-            display: flex;
-            overflow-x: auto;
-            margin-bottom: 10px;
-        }
-        .tab {
-            padding: 5px 10px;
-            background-color: #444;
-            margin-right: 2px;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        .tab.active {
-            background-color: #666;
-        }
-        .close-tab {
-            margin-left: 5px;
-            background: none;
-            border: none;
-            color: #eee;
-            cursor: pointer;
-        }
-        .pdf-viewer {
-            position: relative;
-        }
-        .nav-bar {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background-color: #444;
-            padding: 5px;
-            border-radius: 5px;
-            cursor: move;
-            user-select: none;
-        }
-        #pdf-canvas {
-            max-width: 100%;
-        }
-        #markdown-input {
-            height: 50%;
-            resize: none;
-            background-color: #222;
-            color: #eee;
-            border: 1px solid #555;
-            padding: 5px;
-            font-family: inherit;
-            box-sizing: border-box;
-        }
-        #markdown-rendered {
-            height: 50%;
-            overflow: auto;
-            background-color: #222;
-            border: 1px solid #555;
-            padding: 5px;
-            box-sizing: border-box;
-        }
-        #save-md, #export-word {
-            margin-top: 5px;
-            background-color: #444;
-            color: #eee;
-            border: 1px solid #555;
-            padding: 5px;
-            cursor: pointer;
-        }
-        #wiki-search {
-            width: 100%;
-            background-color: #222;
-            color: #eee;
-            border: 1px solid #555;
-            padding: 5px;
-            font-family: inherit;
-            box-sizing: border-box;
-            margin-bottom: 10px;
-        }
-        .wiki-result {
-            margin-bottom: 10px;
-            overflow: hidden;
-        }
-        .wiki-result h3 {
-            margin: 0 0 5px 0;
-            font-size: 16px;
-        }
-        .wiki-result p {
-            margin: 0 0 5px 0;
-            font-size: 14px;
-        }
-        .wiki-result a {
-            color: #aaf;
-            text-decoration: none;
-        }
-        .wiki-result img {
-            width: 50px;
-            height: 50px;
-            float: left;
-            margin-right: 10px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Multi‑Tool Web App</title>
+  <!-- Dark theme & monospace font -->
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      background-color: #222;
+      color: #eee;
+      font-family: monospace;
+      overflow: hidden;
+    }
+    /* Container holding 3 columns */
+    #container {
+      display: flex;
+      height: 100%;
+      width: 100%;
+    }
+    .column {
+      overflow: auto;
+      position: relative;
+      padding: 10px;
+    }
+    /* Column widths */
+    #col1 { flex: 3; }
+    #col2 { flex: 2; display: flex; flex-direction: column; }
+    #col3 { flex: 2; }
+    /* Resizer bars between columns */
+    .resizer {
+      width: 5px;
+      cursor: col-resize;
+      background-color: #444;
+    }
+    /* PDF Tab Header */
+    #pdf-tabs {
+      display: flex;
+      border-bottom: 1px solid #555;
+      overflow-x: auto;
+    }
+    .pdf-tab {
+      padding: 5px 10px;
+      margin-right: 5px;
+      background-color: #333;
+      border: 1px solid #555;
+      border-bottom: none;
+      cursor: pointer;
+      white-space: nowrap;
+      position: relative;
+    }
+    .pdf-tab.active {
+      background-color: #111;
+    }
+    .pdf-tab .close-btn {
+      position: absolute;
+      top: 0;
+      right: 2px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #f88;
+    }
+    /* PDF Viewer container */
+    #pdf-viewer-container {
+      position: relative;
+      text-align: center;
+    }
+    canvas {
+      max-width: 100%;
+      height: auto;
+    }
+    /* Floating nav bar for PDF */
+    #pdf-nav {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(0,0,0,0.7);
+      padding: 5px;
+      border: 1px solid #555;
+      cursor: move;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    #pdf-nav input[type="number"] {
+      width: 50px;
+    }
+    /* Markdown note area */
+    #markdown-controls {
+      margin-bottom: 5px;
+    }
+    #raw-md, #rendered-md {
+      width: 100%;
+      flex: 1;
+      margin-bottom: 5px;
+      padding: 5px;
+      background-color: #333;
+      border: 1px solid #555;
+      color: #eee;
+      overflow: auto;
+    }
+    #raw-md {
+      resize: vertical;
+    }
+    /* Wikipedia search */
+    #wiki-search {
+      width: 100%;
+      padding: 5px;
+      margin-bottom: 10px;
+      background-color: #333;
+      border: 1px solid #555;
+      color: #eee;
+    }
+    .wiki-result {
+      border-bottom: 1px solid #555;
+      padding: 5px 0;
+      display: flex;
+      gap: 10px;
+    }
+    .wiki-result img {
+      max-width: 75px;
+      max-height: 75px;
+    }
+    .wiki-result a {
+      color: #4aa;
+      text-decoration: none;
+    }
+  </style>
+  <!-- pdf.js from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <!-- marked.js for markdown -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
 </head>
 <body>
-    <div class="app">
-        <div class="column" id="column1">
-            <div class="tab-bar" id="pdf-tabs">
-                <input type="file" id="pdf-upload" accept=".pdf" style="display: none;">
-                <button id="upload-button">Upload PDF</button>
-            </div>
-            <div class="pdf-viewer">
-                <canvas id="pdf-canvas"></canvas>
-                <div class="nav-bar" id="pdf-nav">
-                    <button id="prev-page">Prev</button>
-                    <input type="number" id="page-num" min="1" style="width: 50px;">
-                    <span id="page-count"></span>
-                    <button id="next-page">Next</button>
-                </div>
-            </div>
+  <div id="container">
+    <!-- Column 1: PDF Viewer with Tabs and Floating Navigation -->
+    <div id="col1" class="column">
+      <div>
+        <input type="file" id="pdf-upload" accept="application/pdf">
+      </div>
+      <div id="pdf-tabs"></div>
+      <div id="pdf-viewer-container">
+        <!-- Floating PDF navigation bar -->
+        <div id="pdf-nav">
+          <button id="prev-page">Prev</button>
+          <span id="page-info">Page 0 of 0</span>
+          <button id="next-page">Next</button>
+          <input type="number" id="page-num" min="1" value="1">
+          <button id="go-page">Go</button>
         </div>
-        <div class="resize-handle" id="handle1"></div>
-        <div class="column" id="column2">
-            <textarea id="markdown-input" placeholder="Enter Markdown here..."></textarea>
-            <div id="markdown-rendered"></div>
-            <button id="save-md">Save Markdown</button>
-            <button id="export-word">Export to Word</button>
-        </div>
-        <div class="resize-handle" id="handle2"></div>
-        <div class="column" id="column3">
-            <input type="text" id="wiki-search" placeholder="Search Wikipedia">
-            <div id="wiki-results"></div>
-        </div>
+        <!-- Canvas for PDF page -->
+        <canvas id="pdf-canvas"></canvas>
+      </div>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/2.0.3/marked.min.js"></script>
-    <script>
-        // Configure PDF.js worker
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
+    <div class="resizer" id="resizer1"></div>
+    <!-- Column 2: Markdown Note Taking -->
+    <div id="col2" class="column">
+      <div id="markdown-controls">
+        <button id="save-md">Save Markdown</button>
+        <button id="export-word">Export as Word</button>
+      </div>
+      <textarea id="raw-md" placeholder="Write markdown here..."></textarea>
+      <div id="rendered-md"></div>
+    </div>
+    <div class="resizer" id="resizer2"></div>
+    <!-- Column 3: Wikipedia Live Search -->
+    <div id="col3" class="column">
+      <input type="text" id="wiki-search" placeholder="Search Wikipedia...">
+      <div id="wiki-results"></div>
+    </div>
+  </div>
 
-        // DOM elements
-        const column1 = document.getElementById('column1');
-        const column2 = document.getElementById('column2');
-        const column3 = document.getElementById('column3');
-        const handle1 = document.getElementById('handle1');
-        const handle2 = document.getElementById('handle2');
-        const pdfTabs = document.getElementById('pdf-tabs');
-        const pdfUpload = document.getElementById('pdf-upload');
-        const uploadButton = document.getElementById('upload-button');
-        const pdfCanvas = document.getElementById('pdf-canvas');
-        const navBar = document.getElementById('pdf-nav');
-        const prevPage = document.getElementById('prev-page');
-        const nextPage = document.getElementById('next-page');
-        const pageNum = document.getElementById('page-num');
-        const pageCount = document.getElementById('page-count');
-        const markdownInput = document.getElementById('markdown-input');
-        const markdownRendered = document.getElementById('markdown-rendered');
-        const saveMdButton = document.getElementById('save-md');
-        const exportWordButton = document.getElementById('export-word');
-        const wikiSearch = document.getElementById('wiki-search');
-        const wikiResults = document.getElementById('wiki-results');
+  <script>
+    // Global PDF variables and array to hold opened PDFs
+    const pdfTabsDiv = document.getElementById('pdf-tabs');
+    const pdfCanvas = document.getElementById('pdf-canvas');
+    const pdfCtx = pdfCanvas.getContext('2d');
+    const pdfNav = document.getElementById('pdf-nav');
+    let pdfs = []; // Array of {id, name, pdfDoc, currentPage, totalPages, file}
+    let currentPdfId = null;
 
-        // PDF management
-        let pdfs = [];
-        let activePdfId = null;
+    // Generate unique ID for each PDF
+    function generateId() {
+      return 'pdf-' + Math.random().toString(36).substr(2,9);
+    }
 
-        // Column resizing
-        let isResizing = false;
-        let currentHandle = null;
-        let startX = 0;
+    // Resize canvas based on container width
+    function renderPage(pdfObj, num) {
+      pdfObj.pdfDoc.getPage(num).then(function(page) {
+        const containerWidth = document.getElementById('pdf-viewer-container').clientWidth;
+        const viewport = page.getViewport({ scale: 1 });
+        const scale = containerWidth / viewport.width;
+        const scaledViewport = page.getViewport({ scale: scale });
+        pdfCanvas.height = scaledViewport.height;
+        pdfCanvas.width = scaledViewport.width;
 
-        function startResize(e, handle) {
-            isResizing = true;
-            currentHandle = handle;
-            startX = e.clientX;
+        const renderContext = {
+          canvasContext: pdfCtx,
+          viewport: scaledViewport
+        };
+        page.render(renderContext).promise.then(function() {
+          document.getElementById('page-info').innerText = `Page ${num} of ${pdfObj.totalPages}`;
+          pdfObj.currentPage = num;
+        });
+      });
+    }
+
+    // Update current PDF view (switch tabs)
+    function updateCurrentPdf(pdfId) {
+      currentPdfId = pdfId;
+      const pdfObj = pdfs.find(p => p.id === pdfId);
+      if (pdfObj) {
+        renderPage(pdfObj, pdfObj.currentPage || 1);
+        // Update active tab
+        document.querySelectorAll('.pdf-tab').forEach(tab => {
+          tab.classList.toggle('active', tab.dataset.id === pdfId);
+        });
+      }
+    }
+
+    // Handle PDF upload
+    document.getElementById('pdf-upload').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const id = generateId();
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const typedarray = new Uint8Array(evt.target.result);
+        pdfjsLib.getDocument(typedarray).promise.then(function(pdfDoc_) {
+          const pdfObj = {
+            id: id,
+            name: file.name,
+            pdfDoc: pdfDoc_,
+            currentPage: 1,
+            totalPages: pdfDoc_.numPages,
+            file: file
+          };
+          pdfs.push(pdfObj);
+          addPdfTab(pdfObj);
+          updateCurrentPdf(id);
+        });
+      };
+      reader.readAsArrayBuffer(file);
+      // Reset file input for next upload
+      e.target.value = '';
+    });
+
+    // Add a tab for the uploaded PDF
+    function addPdfTab(pdfObj) {
+      const tab = document.createElement('div');
+      tab.classList.add('pdf-tab');
+      tab.dataset.id = pdfObj.id;
+      // Abbreviate title if too long
+      const title = pdfObj.name.length > 15 ? pdfObj.name.substring(0, 12) + '...' : pdfObj.name;
+      tab.innerHTML = title + ' <span class="close-btn">&times;</span>';
+      tab.addEventListener('click', function(e) {
+        if (e.target.classList.contains('close-btn')) return;
+        updateCurrentPdf(pdfObj.id);
+      });
+      // Close button event
+      tab.querySelector('.close-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        closePdfTab(pdfObj.id);
+      });
+      pdfTabsDiv.appendChild(tab);
+    }
+
+    // Close a PDF tab
+    function closePdfTab(pdfId) {
+      pdfs = pdfs.filter(p => p.id !== pdfId);
+      const tab = document.querySelector(`.pdf-tab[data-id="${pdfId}"]`);
+      if (tab) tab.remove();
+      if (currentPdfId === pdfId) {
+        if (pdfs.length > 0) {
+          updateCurrentPdf(pdfs[pdfs.length - 1].id);
+        } else {
+          // Clear canvas and nav info if no pdf open
+          pdfCtx.clearRect(0, 0, pdfCanvas.width, pdfCanvas.height);
+          document.getElementById('page-info').innerText = 'Page 0 of 0';
+          currentPdfId = null;
         }
+      }
+    }
 
-        function resize(e) {
-            if (!isResizing) return;
-            const delta = e.clientX - startX;
-            startX = e.clientX;
-            if (currentHandle === handle1) {
-                const newWidth1 = column1.offsetWidth + delta;
-                const newWidth2 = column2.offsetWidth - delta;
-                if (newWidth1 > 100 && newWidth2 > 100) {
-                    column1.style.width = `${newWidth1}px`;
-                    column2.style.width = `${newWidth2}px`;
+    // PDF navigation buttons
+    document.getElementById('prev-page').addEventListener('click', function() {
+      if (!currentPdfId) return;
+      const pdfObj = pdfs.find(p => p.id === currentPdfId);
+      if (pdfObj.currentPage > 1) {
+        renderPage(pdfObj, pdfObj.currentPage - 1);
+      }
+    });
+    document.getElementById('next-page').addEventListener('click', function() {
+      if (!currentPdfId) return;
+      const pdfObj = pdfs.find(p => p.id === currentPdfId);
+      if (pdfObj.currentPage < pdfObj.totalPages) {
+        renderPage(pdfObj, pdfObj.currentPage + 1);
+      }
+    });
+    document.getElementById('go-page').addEventListener('click', function() {
+      if (!currentPdfId) return;
+      const pageNum = parseInt(document.getElementById('page-num').value);
+      const pdfObj = pdfs.find(p => p.id === currentPdfId);
+      if (pageNum >= 1 && pageNum <= pdfObj.totalPages) {
+        renderPage(pdfObj, pageNum);
+      }
+    });
+
+    // Make the PDF nav draggable
+    (function() {
+      let offsetX, offsetY, dragging = false;
+      pdfNav.addEventListener('mousedown', function(e) {
+        dragging = true;
+        offsetX = e.clientX - pdfNav.offsetLeft;
+        offsetY = e.clientY - pdfNav.offsetTop;
+      });
+      document.addEventListener('mousemove', function(e) {
+        if (dragging) {
+          pdfNav.style.left = (e.clientX - offsetX) + 'px';
+          pdfNav.style.top = (e.clientY - offsetY) + 'px';
+        }
+      });
+      document.addEventListener('mouseup', function() {
+        dragging = false;
+      });
+    })();
+
+    // Markdown note area
+    const rawMd = document.getElementById('raw-md');
+    const renderedMd = document.getElementById('rendered-md');
+    // Render markdown live on input
+    rawMd.addEventListener('input', function() {
+      renderedMd.innerHTML = marked.parse(rawMd.value);
+    });
+    // Save Markdown raw text
+    document.getElementById('save-md').addEventListener('click', function() {
+      const blob = new Blob([rawMd.value], { type: 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'notes.md';
+      a.click();
+    });
+    // Export rendered markdown as Microsoft Word document (simple HTML wrapper)
+    document.getElementById('export-word').addEventListener('click', function() {
+      const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' "+
+                     "xmlns:w='urn:schemas-microsoft-com:office:word' "+
+                     "xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Exported Document</title></head><body>";
+      const footer = "</body></html>";
+      const sourceHTML = header + renderedMd.innerHTML + footer;
+      const blob = new Blob(['\ufeff', sourceHTML], { type: 'application/msword' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'notes.doc';
+      a.click();
+    });
+
+    // Wikipedia Live Search
+    const wikiSearch = document.getElementById('wiki-search');
+    const wikiResults = document.getElementById('wiki-results');
+    let wikiTimeout = null;
+    wikiSearch.addEventListener('input', function() {
+      clearTimeout(wikiTimeout);
+      const query = wikiSearch.value.trim();
+      if (query === "") {
+        wikiResults.innerHTML = "";
+        return;
+      }
+      // Delay search to avoid too many calls
+      wikiTimeout = setTimeout(() => {
+        // Use Wikipedia API with pageimages and extracts
+        const url = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query)}&prop=pageimages|extracts&exintro&explaintext&piprop=thumbnail&pithumbsize=100&format=json&origin=*`;
+        fetch(url)
+          .then(response => response.json())
+          .then(data => {
+            wikiResults.innerHTML = "";
+            if (data.query && data.query.pages) {
+              // Sort pages by index if available
+              const pages = Object.values(data.query.pages).sort((a, b) => a.index - b.index);
+              pages.forEach(page => {
+                const resultDiv = document.createElement('div');
+                resultDiv.classList.add('wiki-result');
+                let thumb = "";
+                if (page.thumbnail && page.thumbnail.source) {
+                  thumb = `<img src="${page.thumbnail.source}" alt="thumb">`;
                 }
-            } else if (currentHandle === handle2) {
-                const newWidth2 = column2.offsetWidth + delta;
-                const newWidth3 = column3.offsetWidth - delta;
-                if (newWidth2 > 100 && newWidth3 > 100) {
-                    column2.style.width = `${newWidth2}px`;
-                    column3.style.width = `${newWidth3}px`;
-                }
+                resultDiv.innerHTML = thumb +
+                  `<div>
+                     <strong><a target="_blank" href="https://en.wikipedia.org/?curid=${page.pageid}">${page.title}</a></strong>
+                     <p>${page.extract ? page.extract.substring(0,150) + "..." : ""}</p>
+                   </div>`;
+                wikiResults.appendChild(resultDiv);
+              });
+            } else {
+              wikiResults.innerHTML = "<p>No results found.</p>";
             }
-        }
+          });
+      }, 500);
+    });
 
-        function stopResize() {
-            isResizing = false;
-            currentHandle = null;
-        }
-
-        handle1.addEventListener('mousedown', e => startResize(e, handle1));
-        handle2.addEventListener('mousedown', e => startResize(e, handle2));
-        document.addEventListener('mousemove', resize);
-        document.addEventListener('mouseup', stopResize);
-
-        // Navigation bar dragging
-        let isDragging = false;
-        let offsetX, offsetY;
-
-        navBar.addEventListener('mousedown', e => {
-            isDragging = true;
-            offsetX = e.clientX - navBar.offsetLeft;
-            offsetY = e.clientY - navBar.offsetTop;
-        });
-
-        document.addEventListener('mousemove', e => {
-            if (isDragging) {
-                const viewerRect = document.querySelector('.pdf-viewer').getBoundingClientRect();
-                let newLeft = e.clientX - offsetX;
-                let newTop = e.clientY - offsetY;
-                newLeft = Math.max(viewerRect.left, Math.min(newLeft, viewerRect.right - navBar.offsetWidth));
-                newTop = Math.max(viewerRect.top, Math.min(newTop, viewerRect.bottom - navBar.offsetHeight));
-                navBar.style.left = `${newLeft - viewerRect.left}px`;
-                navBar.style.top = `${newTop - viewerRect.top}px`;
-            }
-        });
-
-        document.addEventListener('mouseup', () => {
-            isDragging = false;
-        });
-
-        // PDF handling
-        uploadButton.addEventListener('click', () => pdfUpload.click());
-
-        pdfUpload.addEventListener('change', async e => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = async function() {
-                    const data = reader.result;
-                    const pdfId = Date.now();
-                    const title = file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name;
-                    pdfs.push({ id: pdfId, title, data, currentPage: 1 });
-                    addTab(pdfId, title);
-                    setActiveTab(pdfId);
-                    await loadPdf(pdfId);
-                };
-                reader.readAsArrayBuffer(file);
-                e.target.value = ''; // Reset input
-            }
-        });
-
-        function addTab(id, title) {
-            const tab = document.createElement('div');
-            tab.className = 'tab';
-            tab.dataset.pdfId = id;
-            tab.innerHTML = `<span class="tab-title">${title}</span><button class="close-tab">x</button>`;
-            pdfTabs.insertBefore(tab, uploadButton);
-            tab.addEventListener('click', () => setActiveTab(id));
-            tab.querySelector('.close-tab').addEventListener('click', e => {
-                e.stopPropagation();
-                closeTab(id);
-            });
-        }
-
-        function setActiveTab(id) {
-            activePdfId = id;
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            const activeTab = document.querySelector(`.tab[data-pdf-id="${id}"]`);
-            if (activeTab) activeTab.classList.add('active');
-            loadPdf(id);
-        }
-
-        async function loadPdf(id) {
-            const pdfObj = pdfs.find(p => p.id === id);
-            if (!pdfObj) {
-                pdfCanvas.style.display = 'none';
-                pageCount.textContent = '';
-                return;
-            }
-            pdfCanvas.style.display = 'block';
-            const pdf = await pdfjsLib.getDocument({ data: pdfObj.data }).promise;
-            pdfObj.pdf = pdf;
-            pageCount.textContent = `of ${pdf.numPages}`;
-            renderPage(pdfObj);
-        }
-
-        async function renderPage(pdfObj) {
-            const page = await pdfObj.pdf.getPage(pdfObj.currentPage);
-            const viewport = page.getViewport({ scale: 1 });
-            const scale = column1.clientWidth / viewport.width;
-            const scaledViewport = page.getViewport({ scale });
-            const context = pdfCanvas.getContext('2d');
-            pdfCanvas.width = scaledViewport.width;
-            pdfCanvas.height = scaledViewport.height;
-            await page.render({ canvasContext: context, viewport: scaledViewport }).promise;
-            pageNum.value = pdfObj.currentPage;
-        }
-
-        function closeTab(id) {
-            pdfs = pdfs.filter(p => p.id !== id);
-            const tab = document.querySelector(`.tab[data-pdf-id="${id}"]`);
-            tab.remove();
-            if (activePdfId === id) {
-                const nextPdf = pdfs[0];
-                if (nextPdf) {
-                    setActiveTab(nextPdf.id);
-                } else {
-                    activePdfId = null;
-                    pdfCanvas.style.display = 'none';
-                    pageCount.textContent = '';
-                }
-            }
-        }
-
-        prevPage.addEventListener('click', () => {
-            const pdfObj = pdfs.find(p => p.id === activePdfId);
-            if (pdfObj && pdfObj.currentPage > 1) {
-                pdfObj.currentPage--;
-                renderPage(pdfObj);
-            }
-        });
-
-        nextPage.addEventListener('click', () => {
-            const pdfObj = pdfs.find(p => p.id === activePdfId);
-            if (pdfObj && pdfObj.currentPage < pdfObj.pdf.numPages) {
-                pdfObj.currentPage++;
-                renderPage(pdfObj);
-            }
-        });
-
-        pageNum.addEventListener('change', () => {
-            const pdfObj = pdfs.find(p => p.id === activePdfId);
-            if (pdfObj) {
-                let page = parseInt(pageNum.value);
-                if (page >= 1 && page <= pdfObj.pdf.numPages) {
-                    pdfObj.currentPage = page;
-                    renderPage(pdfObj);
-                } else {
-                    pageNum.value = pdfObj.currentPage;
-                }
-            }
-        });
-
-        // Markdown handling
-        markdownInput.addEventListener('input', () => {
-            markdownRendered.innerHTML = marked.parse(markdownInput.value);
-        });
-
-        saveMdButton.addEventListener('click', () => {
-            const blob = new Blob([markdownInput.value], { type: 'text/markdown' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'notes.md';
-            a.click();
-            URL.revokeObjectURL(url);
-        });
-
-        exportWordButton.addEventListener('click', () => {
-            const htmlContent = `
-                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-                <head><meta charset="utf-8"><title>Notes</title></head>
-                <body>${markdownRendered.innerHTML}</body>
-                </html>`;
-            const blob = new Blob([htmlContent], { type: 'application/msword' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'notes.doc';
-            a.click();
-            URL.revokeObjectURL(url);
-        });
-
-        // Wikipedia search
-        let debounceTimer;
-
-        wikiSearch.addEventListener('input', () => {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => {
-                const query = wikiSearch.value.trim();
-                if (query) {
-                    searchWikipedia(query);
-                } else {
-                    wikiResults.innerHTML = '';
-                }
-            }, 300);
-        });
-
-        async function searchWikipedia(query) {
-            const url = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query)}&prop=extracts|pageimages&exsentences=2&exintro&explaintext&format=json&origin=*`;
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-                const pages = data.query?.pages || {};
-                wikiResults.innerHTML = '';
-                for (const pageId in pages) {
-                    const page = pages[pageId];
-                    const resultDiv = document.createElement('div');
-                    resultDiv.className = 'wiki-result';
-                    let imgHtml = page.thumbnail ? `<img src="${page.thumbnail.source}" alt="${page.title}">` : '';
-                    resultDiv.innerHTML = `
-                        ${imgHtml}
-                        <h3>${page.title}</h3>
-                        <p>${page.extract || 'No summary available.'}</p>
-                        <a href="https://en.wikipedia.org/wiki/${encodeURIComponent(page.title)}" target="_blank">Read more</a>
-                    `;
-                    wikiResults.appendChild(resultDiv);
-                }
-            } catch (error) {
-                wikiResults.innerHTML = '<p>Error fetching results.</p>';
-            }
-        }
-    </script>
+    // Resizable columns
+    function setupResizer(resizer, prevCol, nextCol) {
+      let x = 0;
+      let prevWidth = 0;
+      resizer.addEventListener('mousedown', function(e) {
+        x = e.clientX;
+        prevWidth = prevCol.getBoundingClientRect().width;
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+      });
+      function onMouseMove(e) {
+        const dx = e.clientX - x;
+        const newPrevWidth = prevWidth + dx;
+        // Set width in pixels
+        prevCol.style.flex = '0 0 ' + newPrevWidth + 'px';
+      }
+      function onMouseUp() {
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+      }
+    }
+    const resizer1 = document.getElementById('resizer1');
+    const resizer2 = document.getElementById('resizer2');
+    const col1 = document.getElementById('col1');
+    const col2 = document.getElementById('col2');
+    const col3 = document.getElementById('col3');
+    setupResizer(resizer1, col1, col2);
+    setupResizer(resizer2, col2, col3);
+  </script>
 </body>
 </html>
