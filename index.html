@@ -1,305 +1,454 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>PDF Reader & Notes</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: #1a1a1a;
-            color: #e0e0e0;
-            font-family: Arial, sans-serif;
-            height: 100vh;
-            display: flex;
-        }
-        #container {
-            display: flex;
-            width: 100%;
-            height: 100vh;
-        }
-        #pdf-column {
-            flex: 2;
-            padding: 20px;
-            position: relative;
-            overflow-y: auto;
-        }
-        #right-column {
-            width: 400px;
-            padding: 20px;
-            background: #252525;
-            overflow-y: auto;
-        }
-        #pdf-canvas {
-            width: 100%;
-            height: auto;
-            image-rendering: -webkit-optimize-contrast;
-        }
-        #pdf-controls {
-            position: sticky;
-            top: 20px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 10px;
-            border-radius: 5px;
-            display: flex;
-            gap: 10px;
-            z-index: 1;
-        }
-        #notes-input {
-            width: 100%;
-            min-height: 150px;
-            background: #333;
-            color: #e0e0e0;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            border: none;
-            resize: vertical;
-            font-family: monospace;
-        }
-        #notes-preview {
-            min-height: 100px;
-            background: #333;
-            padding: 10px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-        }
-        #export-buttons {
-            margin: 10px 0;
-        }
-        button {
-            background: #444;
-            color: #fff;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 3px;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #555;
-        }
-        #search-input {
-            width: 100%;
-            padding: 8px;
-            background: #333;
-            color: #fff;
-            border: none;
-            border-radius: 3px;
-            margin-bottom: 10px;
-        }
-        .search-result {
-            margin-bottom: 15px;
-            padding: 10px;
-            background: #333;
-            border-radius: 3px;
-        }
-        .search-result a {
-            color: #1e90ff;
-        }
-        h2 {
-            color: #fff;
-            margin: 20px 0 10px;
-            font-size: 18px;
-            border-bottom: 1px solid #444;
-            padding-bottom: 5px;
-        }
-    </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.9.359/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.2/marked.min.js"></script>
+  <meta charset="UTF-8">
+  <title>Multi-Tool Web App</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      background-color: #2b2b2b;
+      color: #f0f0f0;
+      font-family: Arial, sans-serif;
+    }
+    #container {
+      display: flex;
+      height: 100%;
+      width: 100%;
+    }
+    /* Columns */
+    #col1, #col2, #col3 {
+      overflow: auto;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    #col1 {
+      flex: 1;
+      position: relative;
+    }
+    #col2 {
+      width: 350px;
+    }
+    #col3 {
+      width: 350px;
+    }
+    /* Resizers */
+    .resizer {
+      width: 5px;
+      cursor: ew-resize;
+      background-color: #444;
+    }
+    /* PDF viewer and tabs */
+    #pdf-tabs {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    #pdf-tab-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-wrap: wrap;
+    }
+    #pdf-tab-list li {
+      margin-right: 5px;
+      padding: 5px;
+      background: #444;
+      cursor: pointer;
+    }
+    #pdf-tab-list li.active {
+      background: #666;
+    }
+    #pdf-nav {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: #333;
+      padding: 5px;
+      border: 1px solid #555;
+      z-index: 10;
+      cursor: move;
+    }
+    canvas {
+      display: block;
+      max-width: 100%;
+      margin-top: 50px; /* leave space for the nav bar */
+    }
+    /* Note taking styles */
+    #raw-notes {
+      width: 100%;
+      height: 40%;
+      background: #333;
+      color: #f0f0f0;
+      border: none;
+      padding: 10px;
+      box-sizing: border-box;
+      resize: none;
+    }
+    #rendered-notes {
+      width: 100%;
+      height: 40%;
+      background: #222;
+      color: #f0f0f0;
+      padding: 10px;
+      box-sizing: border-box;
+      overflow: auto;
+      margin-top: 10px;
+    }
+    button {
+      background: #555;
+      color: #f0f0f0;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+      margin-top: 5px;
+    }
+    button:hover {
+      background: #777;
+    }
+    /* Wikipedia search */
+    #wiki-query {
+      width: 100%;
+      padding: 10px;
+      box-sizing: border-box;
+      background: #333;
+      color: #f0f0f0;
+      border: 1px solid #555;
+    }
+    .wiki-result {
+      border-bottom: 1px solid #444;
+      padding: 10px 0;
+      display: flex;
+      align-items: center;
+    }
+    .wiki-result img {
+      margin-right: 10px;
+    }
+  </style>
 </head>
 <body>
-    <div id="container">
-        <div id="pdf-column">
-            <input type="file" id="pdf-upload" accept=".pdf" style="margin-bottom: 10px;">
-            <div id="pdf-controls" style="display: none;">
-                <button onclick="previousPage()">←</button>
-                <span id="page-info"></span>
-                <button onclick="nextPage()">→</button>
-                <input type="number" id="page-input" min="1" style="width: 50px;">
-                <button onclick="goToPage()">Go</button>
-            </div>
-            <canvas id="pdf-canvas"></canvas>
+  <div id="container">
+    <!-- Column 1: PDF Viewer -->
+    <div id="col1">
+      <div id="pdf-tabs">
+        <ul id="pdf-tab-list"></ul>
+        <button id="add-pdf-btn" title="Add PDF">+</button>
+      </div>
+      <div id="pdf-viewer">
+        <div id="pdf-nav">
+          <button id="prev-page">Prev</button>
+          <span>Page <span id="current-page">1</span> of <span id="total-pages">?</span></span>
+          <input type="number" id="page-number-input" min="1" style="width:50px;">
+          <button id="go-to-page">Go</button>
+          <button id="next-page">Next</button>
         </div>
-        <div id="right-column">
-            <h2>Notes (Markdown)</h2>
-            <textarea id="notes-input" placeholder="Enter Markdown here..."></textarea>
-            <div id="notes-preview"></div>
-            <input type="file" id="notes-upload" accept=".txt,.md" style="margin: 10px 0;">
-            <div id="export-buttons">
-                <button onclick="exportTxt()">Export TXT</button>
-                <button onclick="exportPdf()">Export PDF</button>
-            </div>
-            <h2>Wikipedia Search</h2>
-            <input type="text" id="search-input" placeholder="Search Wikipedia...">
-            <div id="search-results"></div>
-        </div>
+        <canvas id="pdf-canvas"></canvas>
+      </div>
+      <input type="file" id="pdf-upload" accept="application/pdf" style="display:none;">
     </div>
+    <div class="resizer" id="resizer1"></div>
+    <!-- Column 2: Note Taking -->
+    <div id="col2">
+      <h2>Notes</h2>
+      <textarea id="raw-notes" placeholder="Enter markdown here..."></textarea>
+      <button id="save-raw">Save Raw Markdown</button>
+      <div id="rendered-notes"></div>
+      <button id="save-doc">Save as MS Word</button>
+    </div>
+    <div class="resizer" id="resizer2"></div>
+    <!-- Column 3: Wikipedia Search -->
+    <div id="col3">
+      <h2>Wikipedia Search</h2>
+      <input type="text" id="wiki-query" placeholder="Search Wikipedia...">
+      <div id="wiki-results"></div>
+    </div>
+  </div>
 
-    <script>
-        let pdfDoc = null;
-        let pageNum = 1;
-        let pageCount = 0;
-        let pdfName = '';
-        const canvas = document.getElementById('pdf-canvas');
-        const ctx = canvas.getContext('2d');
-        const notesInput = document.getElementById('notes-input');
-        const notesPreview = document.getElementById('notes-preview');
+  <!-- External Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.2.12/marked.min.js"></script>
 
-        // Load saved state on page load
-        window.addEventListener('load', function() {
-            const savedNotes = localStorage.getItem('notes');
-            if (savedNotes) {
-                notesInput.value = savedNotes;
-                updatePreview();
-            }
+  <script>
+    /* ================= PDF Viewer (Column 1) ================= */
+    let pdfs = []; // Holds objects { pdfDoc, currentPage, totalPages, name }
+    let currentPdfIndex = -1;
+    const pdfCanvas = document.getElementById('pdf-canvas');
+    const ctx = pdfCanvas.getContext('2d');
+    const pdfUpload = document.getElementById('pdf-upload');
+    const pdfTabList = document.getElementById('pdf-tab-list');
 
-            const savedPage = localStorage.getItem('pageNum');
-            if (savedPage) {
-                pageNum = parseInt(savedPage);
-            }
+    document.getElementById('add-pdf-btn').addEventListener('click', () => {
+      pdfUpload.click();
+    });
 
-            const savedPdf = localStorage.getItem('pdfData');
-            if (savedPdf) {
-                const pdfArray = Uint8Array.from(atob(savedPdf), c => c.charCodeAt(0));
-                pdfjsLib.getDocument(pdfArray).promise.then(function(pdf) {
-                    pdfDoc = pdf;
-                    pageCount = pdf.numPages;
-                    document.getElementById('pdf-controls').style.display = 'flex';
-                    renderPage(pageNum);
-                });
-                pdfName = localStorage.getItem('pdfName') || 'document';
-            }
+    pdfUpload.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file && file.type === 'application/pdf') {
+        loadPDF(file);
+      }
+      e.target.value = "";
+    });
+
+    function loadPDF(file) {
+      const fileReader = new FileReader();
+      fileReader.onload = function() {
+        const typedarray = new Uint8Array(this.result);
+        pdfjsLib.getDocument(typedarray).promise.then(function(pdfDoc) {
+          const pdfData = {
+            pdfDoc: pdfDoc,
+            currentPage: 1,
+            totalPages: pdfDoc.numPages,
+            name: file.name
+          };
+          pdfs.push(pdfData);
+          currentPdfIndex = pdfs.length - 1;
+          addPdfTab(pdfData, currentPdfIndex);
+          renderPage(pdfData.currentPage);
+          updateNav();
+        }).catch(function(error) {
+          alert('Error loading PDF: ' + error);
         });
+      };
+      fileReader.readAsArrayBuffer(file);
+    }
 
-        // PDF Upload
-        document.getElementById('pdf-upload').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file && file.type === 'application/pdf') {
-                pdfName = file.name.split('.pdf')[0];
-                const fileReader = new FileReader();
-                fileReader.onload = function() {
-                    const typedarray = new Uint8Array(this.result);
-                    localStorage.setItem('pdfData', btoa(String.fromCharCode.apply(null, typedarray)));
-                    localStorage.setItem('pdfName', pdfName);
-                    pdfjsLib.getDocument(typedarray).promise.then(function(pdf) {
-                        pdfDoc = pdf;
-                        pageCount = pdf.numPages;
-                        document.getElementById('pdf-controls').style.display = 'flex';
-                        renderPage(pageNum);
-                    });
-                };
-                fileReader.readAsArrayBuffer(file);
-            }
-        });
+    function addPdfTab(pdfData, index) {
+      const li = document.createElement('li');
+      li.textContent = pdfData.name;
+      li.dataset.index = index;
+      li.addEventListener('click', () => {
+        currentPdfIndex = parseInt(li.dataset.index);
+        renderPage(pdfs[currentPdfIndex].currentPage);
+        updateNav();
+        updateTabs();
+      });
+      pdfTabList.appendChild(li);
+      updateTabs();
+    }
 
-        // Notes Upload
-        document.getElementById('notes-upload').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file && (file.type === 'text/plain' || file.name.endsWith('.md'))) {
-                const fileReader = new FileReader();
-                fileReader.onload = function() {
-                    notesInput.value = this.result;
-                    updatePreview();
-                    localStorage.setItem('notes', this.result);
-                };
-                fileReader.readAsText(file);
-            }
-        });
+    function updateTabs() {
+      const tabs = pdfTabList.querySelectorAll('li');
+      tabs.forEach(tab => {
+        tab.classList.toggle('active', parseInt(tab.dataset.index) === currentPdfIndex);
+      });
+    }
 
-        // Markdown Preview and Save
-        function updatePreview() {
-            notesPreview.innerHTML = marked.parse(notesInput.value);
-            localStorage.setItem('notes', notesInput.value);
+    function renderPage(num) {
+      if (currentPdfIndex < 0) return;
+      const pdfData = pdfs[currentPdfIndex];
+      pdfData.pdfDoc.getPage(num).then(function(page) {
+        // Calculate scale so that the PDF fills the column's width
+        const viewport = page.getViewport({ scale: 1 });
+        const colWidth = document.getElementById('col1').clientWidth - 20;
+        const scale = colWidth / viewport.width;
+        const scaledViewport = page.getViewport({ scale: scale });
+        pdfCanvas.height = scaledViewport.height;
+        pdfCanvas.width = scaledViewport.width;
+        const renderContext = {
+          canvasContext: ctx,
+          viewport: scaledViewport
+        };
+        page.render(renderContext);
+        pdfData.currentPage = num;
+        updateNav();
+      });
+    }
+
+    function updateNav() {
+      if (currentPdfIndex < 0) return;
+      const pdfData = pdfs[currentPdfIndex];
+      document.getElementById('current-page').textContent = pdfData.currentPage;
+      document.getElementById('total-pages').textContent = pdfData.totalPages;
+    }
+
+    document.getElementById('prev-page').addEventListener('click', () => {
+      if (currentPdfIndex < 0) return;
+      if (pdfs[currentPdfIndex].currentPage > 1) {
+        renderPage(pdfs[currentPdfIndex].currentPage - 1);
+      }
+    });
+
+    document.getElementById('next-page').addEventListener('click', () => {
+      if (currentPdfIndex < 0) return;
+      if (pdfs[currentPdfIndex].currentPage < pdfs[currentPdfIndex].totalPages) {
+        renderPage(pdfs[currentPdfIndex].currentPage + 1);
+      }
+    });
+
+    document.getElementById('go-to-page').addEventListener('click', () => {
+      if (currentPdfIndex < 0) return;
+      const pageNumber = parseInt(document.getElementById('page-number-input').value);
+      if (pageNumber >= 1 && pageNumber <= pdfs[currentPdfIndex].totalPages) {
+        renderPage(pageNumber);
+      }
+    });
+
+    // Redraw PDF on window resize
+    window.addEventListener('resize', () => {
+      if (currentPdfIndex >= 0) {
+        renderPage(pdfs[currentPdfIndex].currentPage);
+      }
+    });
+
+    // Make the PDF navigation bar draggable
+    (function() {
+      const nav = document.getElementById('pdf-nav');
+      let offsetX, offsetY, isDragging = false;
+      nav.addEventListener('mousedown', function(e) {
+        isDragging = true;
+        offsetX = e.clientX - nav.offsetLeft;
+        offsetY = e.clientY - nav.offsetTop;
+      });
+      document.addEventListener('mousemove', function(e) {
+        if (isDragging) {
+          nav.style.left = (e.clientX - offsetX) + 'px';
+          nav.style.top = (e.clientY - offsetY) + 'px';
         }
-        notesInput.addEventListener('input', updatePreview);
+      });
+      document.addEventListener('mouseup', function() {
+        isDragging = false;
+      });
+    })();
 
-        function renderPage(num) {
-            if (!pdfDoc) return;
-            pdfDoc.getPage(num).then(function(page) {
-                const viewport = page.getViewport({ scale: 2.0 });
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
-                const renderContext = {
-                    canvasContext: ctx,
-                    viewport: viewport
-                };
-                page.render(renderContext);
-                document.getElementById('page-info').textContent = `Page ${num} of ${pageCount}`;
-                document.getElementById('page-input').max = pageCount;
-                localStorage.setItem('pageNum', num);
+    /* ================= Resizable Columns ================= */
+    (function() {
+      const resizer1 = document.getElementById('resizer1');
+      const resizer2 = document.getElementById('resizer2');
+      const col1 = document.getElementById('col1');
+      const col2 = document.getElementById('col2');
+      const col3 = document.getElementById('col3');
+
+      // Resizer between Column 1 and Column 2
+      resizer1.addEventListener('mousedown', initDrag1);
+      function initDrag1(e) {
+        window.addEventListener('mousemove', startDrag1);
+        window.addEventListener('mouseup', stopDrag1);
+      }
+      function startDrag1(e) {
+        let newWidth = e.clientX - col1.getBoundingClientRect().left;
+        col1.style.flex = 'none';
+        col1.style.width = newWidth + 'px';
+      }
+      function stopDrag1(e) {
+        window.removeEventListener('mousemove', startDrag1);
+        window.removeEventListener('mouseup', stopDrag1);
+      }
+
+      // Resizer between Column 2 and Column 3
+      resizer2.addEventListener('mousedown', initDrag2);
+      function initDrag2(e) {
+        window.addEventListener('mousemove', startDrag2);
+        window.addEventListener('mouseup', stopDrag2);
+      }
+      function startDrag2(e) {
+        const col2Rect = col2.getBoundingClientRect();
+        let newWidth = e.clientX - col2Rect.left;
+        col2.style.width = newWidth + 'px';
+      }
+      function stopDrag2(e) {
+        window.removeEventListener('mousemove', startDrag2);
+        window.removeEventListener('mouseup', stopDrag2);
+      }
+    })();
+
+    /* ================= Note Taking & Markdown (Column 2) ================= */
+    const rawNotes = document.getElementById('raw-notes');
+    const renderedNotes = document.getElementById('rendered-notes');
+
+    function updateRenderedNotes() {
+      renderedNotes.innerHTML = marked.parse(rawNotes.value);
+    }
+    rawNotes.addEventListener('input', updateRenderedNotes);
+    updateRenderedNotes();
+
+    document.getElementById('save-raw').addEventListener('click', function() {
+      const blob = new Blob([rawNotes.value], { type: "text/plain;charset=utf-8" });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = "notes.md";
+      link.click();
+    });
+
+    document.getElementById('save-doc').addEventListener('click', function() {
+      const content = '<html><head><meta charset="UTF-8"></head><body>' + renderedNotes.innerHTML + '</body></html>';
+      const blob = new Blob([content], { type: "application/msword" });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = "notes.doc";
+      link.click();
+    });
+
+    /* ================= Wikipedia Live Search (Column 3) ================= */
+    const wikiQuery = document.getElementById('wiki-query');
+    const wikiResults = document.getElementById('wiki-results');
+    let wikiTimeout = null;
+
+    wikiQuery.addEventListener('input', function() {
+      clearTimeout(wikiTimeout);
+      const query = wikiQuery.value.trim();
+      if (query.length === 0) {
+        wikiResults.innerHTML = "";
+        return;
+      }
+      wikiTimeout = setTimeout(() => {
+        fetchWikipedia(query);
+      }, 300);
+    });
+
+    function fetchWikipedia(query) {
+      const url = 'https://en.wikipedia.org/w/api.php?' + new URLSearchParams({
+        action: 'query',
+        format: 'json',
+        origin: '*',
+        prop: 'pageimages|extracts',
+        exintro: '1',
+        explaintext: '1',
+        pithumbsize: '100',
+        generator: 'search',
+        gsrsearch: query,
+        gsrlimit: '10'
+      });
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          wikiResults.innerHTML = "";
+          if (data.query && data.query.pages) {
+            let pages = Object.values(data.query.pages);
+            pages.sort((a, b) => a.index - b.index);
+            pages.forEach(page => {
+              const div = document.createElement('div');
+              div.className = 'wiki-result';
+              if (page.thumbnail && page.thumbnail.source) {
+                const img = document.createElement('img');
+                img.src = page.thumbnail.source;
+                img.width = 50;
+                img.height = 50;
+                div.appendChild(img);
+              }
+              const info = document.createElement('div');
+              const title = document.createElement('h3');
+              title.textContent = page.title;
+              const extract = document.createElement('p');
+              extract.textContent = page.extract;
+              const link = document.createElement('a');
+              link.href = 'https://en.wikipedia.org/?curid=' + page.pageid;
+              link.textContent = 'Read more';
+              link.target = '_blank';
+              info.appendChild(title);
+              info.appendChild(extract);
+              info.appendChild(link);
+              div.appendChild(info);
+              wikiResults.appendChild(div);
             });
-        }
-
-        function previousPage() {
-            if (pageNum <= 1) return;
-            pageNum--;
-            renderPage(pageNum);
-        }
-
-        function nextPage() {
-            if (pageNum >= pageCount) return;
-            pageNum++;
-            renderPage(pageNum);
-        }
-
-        function goToPage() {
-            const input = document.getElementById('page-input');
-            let num = parseInt(input.value);
-            if (num >= 1 && num <= pageCount) {
-                pageNum = num;
-                renderPage(pageNum);
-            }
-        }
-
-        function exportTxt() {
-            const notes = notesInput.value;
-            const blob = new Blob([notes], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${pdfName}_EXPORTED_NOTES.txt`;
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        function exportPdf() {
-            const notes = notesPreview;
-            const opt = {
-                margin: 1,
-                filename: `${pdfName}_EXPORTED_NOTES.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-            };
-            html2pdf().set(opt).from(notes).save();
-        }
-
-        let searchTimeout;
-        document.getElementById('search-input').addEventListener('input', function(e) {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                if (e.target.value) {
-                    fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(e.target.value)}&format=json&origin=*`)
-                        .then(response => response.json())
-                        .then(data => {
-                            const results = data.query.search;
-                            const resultsDiv = document.getElementById('search-results');
-                            resultsDiv.innerHTML = '';
-                            results.slice(0, 5).forEach(result => {
-                                const div = document.createElement('div');
-                                div.className = 'search-result';
-                                div.innerHTML = `
-                                    <h3>${result.title}</h3>
-                                    <p>${result.snippet.replace(/<[^>]+>/g, '')}</p>
-                                    <a href="https://en.wikipedia.org/wiki/${encodeURIComponent(result.title)}" target="_blank">Read more</a>
-                                `;
-                                resultsDiv.appendChild(div);
-                            });
-                        });
-                }
-            }, 300);
+          }
+        })
+        .catch(error => {
+          wikiResults.innerHTML = "Error fetching results.";
+          console.error(error);
         });
-    </script>
+    }
+  </script>
 </body>
 </html>
