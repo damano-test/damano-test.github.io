@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDF Reader & Notes</title>
     <style>
         body {
@@ -13,136 +12,132 @@
             font-family: Arial, sans-serif;
             height: 100vh;
             display: flex;
-            overflow: hidden;
         }
-        .container {
+        #container {
             display: flex;
             width: 100%;
-            height: 100%;
+            height: 100vh;
         }
-        .left-column {
+        #pdf-column {
             flex: 2;
             padding: 20px;
+            position: relative;
             overflow-y: auto;
-            background: #252525;
         }
-        .right-column {
+        #right-column {
             width: 400px;
             padding: 20px;
-            background: #2d2d2d;
+            background: #252525;
             overflow-y: auto;
-            border-left: 1px solid #404040;
         }
-        #pdfViewer {
+        #pdf-canvas {
             width: 100%;
-            position: relative;
-        }
-        #pdfCanvas {
-            max-width: 100%;
             height: auto;
+            image-rendering: -webkit-optimize-contrast;
         }
-        .pdf-controls {
+        #pdf-controls {
             position: sticky;
             top: 20px;
-            background: rgba(37, 37, 37, 0.9);
+            background: rgba(0, 0, 0, 0.8);
             padding: 10px;
             border-radius: 5px;
-            margin-bottom: 10px;
+            display: flex;
+            gap: 10px;
             z-index: 1;
         }
         #notes {
-            width: 100%;
-            height: 300px;
-            background: #353535;
-            color: #e0e0e0;
-            border: 1px solid #404040;
+            min-height: 200px;
+            background: #333;
             padding: 10px;
-            resize: vertical;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            outline: none;
+        }
+        #format-buttons, #export-buttons {
+            margin: 10px 0;
         }
         button {
-            background: #4a4a4a;
-            color: #e0e0e0;
+            background: #444;
+            color: #fff;
             border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
+            padding: 5px 10px;
+            border-radius: 3px;
             cursor: pointer;
         }
         button:hover {
-            background: #5a5a5a;
+            background: #555;
         }
-        #wikiSearch {
+        #search-input {
             width: 100%;
             padding: 8px;
-            background: #353535;
-            border: 1px solid #404040;
-            color: #e0e0e0;
+            background: #333;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
             margin-bottom: 10px;
         }
-        #wikiResults {
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .wiki-result {
-            background: #353535;
+        .search-result {
+            margin-bottom: 15px;
             padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 5px;
+            background: #333;
+            border-radius: 3px;
         }
-        .wiki-result a {
-            color: #4da8da;
-            text-decoration: none;
-        }
-        .wiki-result a:hover {
-            text-decoration: underline;
+        .search-result a {
+            color: #1e90ff;
         }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.9.359/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <div class="left-column">
-            <input type="file" id="pdfUpload" accept=".pdf">
-            <div class="pdf-controls">
-                <button onclick="prevPage()">←</button>
-                <span>Page <input type="number" id="pageNum" min="1" style="width: 50px"> of <span id="pageCount">0</span></span>
+    <div id="container">
+        <div id="pdf-column">
+            <input type="file" id="pdf-upload" accept=".pdf" style="margin-bottom: 10px;">
+            <div id="pdf-controls" style="display: none;">
+                <button onclick="previousPage()">←</button>
+                <span id="page-info"></span>
                 <button onclick="nextPage()">→</button>
+                <input type="number" id="page-input" min="1" style="width: 50px;">
+                <button onclick="goToPage()">Go</button>
             </div>
-            <div id="pdfViewer">
-                <canvas id="pdfCanvas"></canvas>
-            </div>
+            <canvas id="pdf-canvas"></canvas>
         </div>
-        <div class="right-column">
-            <h3>Notes</h3>
-            <textarea id="notes" placeholder="Take your notes here..."></textarea>
-            <button onclick="exportNotes()">Export Notes</button>
-            <h3>Wikipedia Search</h3>
-            <input type="text" id="wikiSearch" placeholder="Search Wikipedia...">
-            <div id="wikiResults"></div>
+        <div id="right-column">
+            <div id="format-buttons">
+                <button onclick="document.execCommand('bold')">B</button>
+                <button onclick="document.execCommand('italic')">I</button>
+                <button onclick="document.execCommand('underline')">U</button>
+                <button onclick="document.execCommand('insertUnorderedList')">•</button>
+            </div>
+            <div id="notes" contenteditable="true"></div>
+            <div id="export-buttons">
+                <button onclick="exportTxt()">Export TXT</button>
+                <button onclick="exportPdf()">Export PDF</button>
+            </div>
+            <input type="text" id="search-input" placeholder="Wikipedia Search...">
+            <div id="search-results"></div>
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.9.359/pdf.min.js"></script>
     <script>
         let pdfDoc = null;
         let pageNum = 1;
         let pageCount = 0;
-        let pdfFileName = '';
-        const canvas = document.getElementById('pdfCanvas');
+        let pdfName = '';
+        const canvas = document.getElementById('pdf-canvas');
         const ctx = canvas.getContext('2d');
 
-        // PDF Upload and Rendering
-        document.getElementById('pdfUpload').addEventListener('change', function(e) {
+        document.getElementById('pdf-upload').addEventListener('change', function(e) {
             const file = e.target.files[0];
-            if (file && file.type === "application/pdf") {
-                pdfFileName = file.name.replace('.pdf', '');
+            if (file && file.type === 'application/pdf') {
+                pdfName = file.name.split('.pdf')[0];
                 const fileReader = new FileReader();
                 fileReader.onload = function() {
                     const typedarray = new Uint8Array(this.result);
                     pdfjsLib.getDocument(typedarray).promise.then(function(pdf) {
                         pdfDoc = pdf;
                         pageCount = pdf.numPages;
-                        document.getElementById('pageCount').textContent = pageCount;
-                        document.getElementById('pageNum').max = pageCount;
+                        document.getElementById('pdf-controls').style.display = 'flex';
                         renderPage(pageNum);
                     });
                 };
@@ -152,7 +147,7 @@
 
         function renderPage(num) {
             pdfDoc.getPage(num).then(function(page) {
-                const viewport = page.getViewport({ scale: 2.0 }); // High resolution
+                const viewport = page.getViewport({ scale: 2.0 });
                 canvas.height = viewport.height;
                 canvas.width = viewport.width;
                 const renderContext = {
@@ -160,11 +155,12 @@
                     viewport: viewport
                 };
                 page.render(renderContext);
-                document.getElementById('pageNum').value = num;
+                document.getElementById('page-info').textContent = `Page ${num} of ${pageCount}`;
+                document.getElementById('page-input').max = pageCount;
             });
         }
 
-        function prevPage() {
+        function previousPage() {
             if (pageNum <= 1) return;
             pageNum--;
             renderPage(pageNum);
@@ -176,48 +172,62 @@
             renderPage(pageNum);
         }
 
-        document.getElementById('pageNum').addEventListener('change', function() {
-            let num = parseInt(this.value);
+        function goToPage() {
+            const input = document.getElementById('page-input');
+            let num = parseInt(input.value);
             if (num >= 1 && num <= pageCount) {
                 pageNum = num;
                 renderPage(pageNum);
             }
-        });
+        }
 
-        // Export Notes
-        function exportNotes() {
-            const notes = document.getElementById('notes').value;
+        function exportTxt() {
+            const notes = document.getElementById('notes').innerText;
             const blob = new Blob([notes], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${pdfFileName}_EXPORTED_NOTES.txt`;
+            a.download = `${pdfName}_EXPORTED_NOTES.txt`;
             a.click();
             URL.revokeObjectURL(url);
         }
 
-        // Wikipedia Search
-        document.getElementById('wikiSearch').addEventListener('input', function(e) {
-            const query = e.target.value;
-            if (query.length > 2) {
-                fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*`)
-                    .then(response => response.json())
-                    .then(data => {
-                        const results = data.query.search;
-                        const resultsDiv = document.getElementById('wikiResults');
-                        resultsDiv.innerHTML = '';
-                        results.slice(0, 5).forEach(result => {
-                            const div = document.createElement('div');
-                            div.className = 'wiki-result';
-                            div.innerHTML = `
-                                <strong>${result.title}</strong><br>
-                                ${result.snippet}...<br>
-                                <a href="https://en.wikipedia.org/wiki/${encodeURIComponent(result.title)}" target="_blank">Read more</a>
-                            `;
-                            resultsDiv.appendChild(div);
+        function exportPdf() {
+            const notes = document.getElementById('notes');
+            const opt = {
+                margin: 1,
+                filename: `${pdfName}_EXPORTED_NOTES.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(notes).save();
+        }
+
+        let searchTimeout;
+        document.getElementById('search-input').addEventListener('input', function(e) {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (e.target.value) {
+                    fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(e.target.value)}&format=json&origin=*`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const results = data.query.search;
+                            const resultsDiv = document.getElementById('search-results');
+                            resultsDiv.innerHTML = '';
+                            results.slice(0, 5).forEach(result => {
+                                const div = document.createElement('div');
+                                div.className = 'search-result';
+                                div.innerHTML = `
+                                    <h3>${result.title}</h3>
+                                    <p>${result.snippet.replace(/<[^>]+>/g, '')}</p>
+                                    <a href="https://en.wikipedia.org/wiki/${encodeURIComponent(result.title)}" target="_blank">Read more</a>
+                                `;
+                                resultsDiv.appendChild(div);
+                            });
                         });
-                    });
-            }
+                }
+            }, 300);
         });
     </script>
 </body>
