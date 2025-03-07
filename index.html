@@ -85,6 +85,13 @@
         .search-result a {
             color: #1e90ff;
         }
+        h2 {
+            color: #fff;
+            margin: 20px 0 10px;
+            font-size: 18px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.9.359/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -103,6 +110,7 @@
             <canvas id="pdf-canvas"></canvas>
         </div>
         <div id="right-column">
+            <h2>Notes</h2>
             <div id="format-buttons">
                 <button onclick="document.execCommand('bold')">B</button>
                 <button onclick="document.execCommand('italic')">I</button>
@@ -114,7 +122,8 @@
                 <button onclick="exportTxt()">Export TXT</button>
                 <button onclick="exportPdf()">Export PDF</button>
             </div>
-            <input type="text" id="search-input" placeholder="Wikipedia Search...">
+            <h2>Wikipedia Search</h2>
+            <input type="text" id="search-input" placeholder="Search Wikipedia...">
             <div id="search-results"></div>
         </div>
     </div>
