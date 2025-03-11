@@ -6,3 +6,8 @@ p {
   font-size: 18px;
   line-height: 1.8rem;
 }
+img[src*="#cover"] {
+  height: 400px;
+  float: right;
+  padding: 0 0 5px 5px;
+}
